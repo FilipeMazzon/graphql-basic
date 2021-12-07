@@ -1,0 +1,17 @@
+{
+  "name": "victor",
+  "version": "1.0.0",
+  "description": "Basic project to mentee Victor",
+  "main": "index.js",
+  "author": "Rafael Redigolo",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "express-graphql": "^0.12.0",
+    "graphql": "^16.0.1"
+  }
+}
