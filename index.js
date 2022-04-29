@@ -69,6 +69,9 @@ const schema = buildSchema(`
     products: [Product],
     totalPrice: Float,
   }
+  type Mutation {
+	  createCategory(name: String!): Category
+	}
 `);
 
 const calculateIndex = (index) => {
@@ -99,6 +102,7 @@ const handleProduct = (productSearch) => {
 const calculateTotalPrice = (products) => {
 	return products.reduce((totalPrice, product) => totalPrice + product.price, 0);
 }
+
 const aggregateOrder = (order) => {
 	const products = order.products.map(handleProduct);
 	return {
@@ -108,7 +112,7 @@ const aggregateOrder = (order) => {
 	}
 }
 
-const validateIfExists = (collection ,listIds =[]) => {
+const validateIfExists = (collection, listIds = []) => {
 	const notFound = listIds.some((
 		id
 	) => !!db[collection].findIndex((element => element.id === id)));
@@ -117,17 +121,19 @@ const validateIfExists = (collection ,listIds =[]) => {
 	}
 }
 
-const createCategory = (category) => {
+const createCategory = ({name}) => {
 	const id = getId(DbCollectionEnum.categories);
-	db.categories.push({
+	const category = {
 		id,
-		name: category.name
-	})
+		name
+	};
+	db.categories.push(category);
+	return category;
 }
 
 const createProduct = (product) => {
 	const id = getId(DbCollectionEnum.products);
-	validateIfExists(DbCollectionEnum.categories,product.category);
+	validateIfExists(DbCollectionEnum.categories, product.category);
 	db.products.push({
 		id,
 		name: product.name,
@@ -138,7 +144,7 @@ const createProduct = (product) => {
 
 const createOrder = (order) => {
 	const id = getId(DbCollectionEnum.orders);
-	validateIfExists(DbCollectionEnum.products,order.products);
+	validateIfExists(DbCollectionEnum.products, order.products);
 	db.orders.push({
 		id,
 		products: order.products
