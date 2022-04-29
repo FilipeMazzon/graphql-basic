@@ -70,7 +70,9 @@ const schema = buildSchema(`
     totalPrice: Float,
   }
   type Mutation {
-	  createCategory(name: String!): Category
+	  createCategory(name: String!): Category,
+	  createProduct(name: String!, categories: [ID!], price: Float!): Product,
+	  createOrder(products: [ID!]): Order,
 	}
 `);
 
@@ -94,7 +96,7 @@ const aggregateProduct = (product) => {
 const handleProduct = (productSearch) => {
 	const productFound = db.products.find(product => product.id === productSearch);
 	if (productFound.categories?.length) {
-		return aggregateProduct(productFound)
+		return aggregateProduct(productFound);
 	}
 	return productFound;
 }
@@ -115,7 +117,8 @@ const aggregateOrder = (order) => {
 const validateIfExists = (collection, listIds = []) => {
 	const notFound = listIds.some((
 		id
-	) => !!db[collection].findIndex((element => element.id === id)));
+	) =>
+		!db[collection].find((element => element.id === id)));
 	if (notFound) {
 		throw new Error(`Your try to add a ${collection} which not exists.`)
 	}
@@ -131,24 +134,28 @@ const createCategory = ({name}) => {
 	return category;
 }
 
-const createProduct = (product) => {
+const createProduct = ({name, categories, price}) => {
 	const id = getId(DbCollectionEnum.products);
-	validateIfExists(DbCollectionEnum.categories, product.category);
-	db.products.push({
+	validateIfExists(DbCollectionEnum.categories, categories);
+	const product = {
 		id,
-		name: product.name,
-		categories: product.categories,
-		price: product.price
-	})
+		name: name,
+		categories: categories,
+		price: price
+	}
+	db.products.push(product);
+	return aggregateProduct(product);
 }
 
 const createOrder = (order) => {
 	const id = getId(DbCollectionEnum.orders);
 	validateIfExists(DbCollectionEnum.products, order.products);
-	db.orders.push({
+	const newOrder = {
 		id,
 		products: order.products
-	})
+	}
+	db.orders.push(newOrder)
+	return aggregateOrder(newOrder);
 }
 const root = {
 	hello: () => {
