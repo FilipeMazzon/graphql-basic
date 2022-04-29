@@ -2,6 +2,11 @@ const express = require('express');
 const {graphqlHTTP} = require('express-graphql');
 const {buildSchema} = require('graphql');
 
+const DbCollectionEnum = {
+	products: 'products',
+	orders: 'orders',
+	categories: 'categories'
+}
 
 const db = {
 	products: [
@@ -66,6 +71,14 @@ const schema = buildSchema(`
   }
 `);
 
+const calculateIndex = (index) => {
+	return (parseInt(index, 10) + 1).toString();
+}
+
+const getId = (collection) => {
+	const lastElement = db[collection][db[collection].length - 1];
+	return lastElement ? calculateIndex(lastElement.id) : '1'
+}
 
 const aggregateProduct = (product) => {
 	return {
@@ -94,6 +107,43 @@ const aggregateOrder = (order) => {
 		totalPrice: calculateTotalPrice(products)
 	}
 }
+
+const validateIfExists = (collection ,listIds =[]) => {
+	const notFound = listIds.some((
+		id
+	) => !!db[collection].findIndex((element => element.id === id)));
+	if (notFound) {
+		throw new Error(`Your try to add a ${collection} which not exists.`)
+	}
+}
+
+const createCategory = (category) => {
+	const id = getId(DbCollectionEnum.categories);
+	db.categories.push({
+		id,
+		name: category.name
+	})
+}
+
+const createProduct = (product) => {
+	const id = getId(DbCollectionEnum.products);
+	validateIfExists(DbCollectionEnum.categories,product.category);
+	db.products.push({
+		id,
+		name: product.name,
+		categories: product.categories,
+		price: product.price
+	})
+}
+
+const createOrder = (order) => {
+	const id = getId(DbCollectionEnum.orders);
+	validateIfExists(DbCollectionEnum.products,order.products);
+	db.orders.push({
+		id,
+		products: order.products
+	})
+}
 const root = {
 	hello: () => {
 		return 'Hello World!';
@@ -106,7 +156,10 @@ const root = {
 	},
 	orders: () => {
 		return db.orders.map(aggregateOrder);
-	}
+	},
+	createCategory,
+	createProduct,
+	createOrder
 };
 
 const app = express();
